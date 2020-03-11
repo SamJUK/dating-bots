@@ -1,39 +1,40 @@
 import math
 import random
-import lib.common.time as time
 
+import lib.common.time as time
 import lib.common.browser as browser
-from lib.bumble.config import node_selectors
+from lib.common.dating import IDating
 
 from selenium.webdriver.support import ui
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 
-class Bumble:
+class Client(IDating):
+
+	node_selectors = {
+		"bumble_fb_login_trigger": '//*[contains(@class, "color-provider-facebook") and .//span[contains(., "Use Facebook")]]',
+		"facebook_username": '//*[@id="email"]',
+		"facebook_password": '//*[@id="pass"]',
+		"facebook_login_trigger": '//input[@name="login"]',
+		"bumble_stories_container": '//div[contains(@class, "encounters-album__stories-container")]',
+		"bumble_stories": '//div[contains(@class, "encounters-album__stories-container")]/*',
+		"bumble_user_name_age": '//*[contains(@class, "encounters-story-profile__name")]',
+		"bumble_no_users_dialog": '//*[contains(@class, "cta-box__title") and .//span[contains(., "all caught up")]]'
+	}
+
 	def __init__(self, driver):
 		self.driver = driver
 
 	def login(self, credentials):
 		self.driver.get('https://bumble.com/get-started')
 		wait = ui.WebDriverWait(self.driver, 10)
-		wait.until(lambda driver: self.driver.find_element_by_xpath(node_selectors["bumble_fb_login_trigger"]))
-
-		bumble_window = self.driver.window_handles[0]
-		self.driver.find_element_by_xpath(node_selectors["bumble_fb_login_trigger"]).click()
-		facebook_window = self.driver.window_handles[-1]
-		self.driver.switch_to.window(facebook_window)
-
-		# Wait for facebook inputs, enter and submit
-		wait.until(lambda driver: self.driver.find_element_by_xpath(node_selectors["facebook_username"]))
-		self.driver.find_element_by_xpath(node_selectors["facebook_username"]).send_keys(credentials["username"])
-		self.driver.find_element_by_xpath(node_selectors["facebook_password"]).send_keys(credentials["password"])
-		self.driver.find_element_by_xpath(node_selectors["facebook_login_trigger"]).click()
-
-		self.driver.switch_to.window(bumble_window)
+		wait.until(lambda driver: self.driver.find_element_by_xpath(self.node_selectors["bumble_fb_login_trigger"]))
+		self.loginWithFacebook(credentials)
 		return self
 
 	def getName(self):
-		return self.driver.find_element_by_xpath(node_selectors["bumble_user_name_age"]).text
+		return self.driver.find_element_by_xpath(self.node_selectors["bumble_user_name_age"]).text.split(',')[0]
 
 	def like(self):
 		print('Liked')
@@ -51,7 +52,7 @@ class Bumble:
 
 	def noUserDialog(self):
 		try:
-			self.driver.find_element_by_xpath(node_selectors["bumble_no_users_dialog"])
+			self.driver.find_element_by_xpath(self.node_selectors["bumble_no_users_dialog"])
 			return True
 		except NoSuchElementException:
 			return False
@@ -59,7 +60,7 @@ class Bumble:
 	def processUser(self):
 		wait = ui.WebDriverWait(self.driver, 10)
 		wait.until(lambda driver: self.driver.find_element_by_xpath(
-			"{} | {}".format(node_selectors["bumble_stories_container"], node_selectors["bumble_no_users_dialog"])
+			"{} | {}".format(self.node_selectors["bumble_stories_container"], self.node_selectors["bumble_no_users_dialog"])
 		))
 
 		if self.noUserDialog():
@@ -81,7 +82,7 @@ class Bumble:
 
 	def scrollContent(self):
 		actions = ActionChains(self.driver)
-		stories = self.driver.find_elements_by_xpath(node_selectors["bumble_stories"])
+		stories = self.driver.find_elements_by_xpath(self.node_selectors["bumble_stories"])
 		storyCount = len(stories)
 		totalNavigationActions = random.randrange(0, math.ceil((storyCount-1)*1.2))
 		currentStory = 0

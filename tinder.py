@@ -1,8 +1,8 @@
 import lib.common.time as time
 import lib.common.browser as browser
 
-from lib.bumble.client import Client
-from credentials.bumble import facebook_credentials
+from lib.tinder.client import Client
+from credentials.tinder import facebook_credentials
 
 driver = browser.createBrowser()
 

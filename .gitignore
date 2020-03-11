@@ -1,3 +1,4 @@
 geckodriver.log
-credentials/bumble.py
+credentials/*.py
+!credentials/*.example.py
 __pycache__
